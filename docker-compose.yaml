@@ -66,6 +66,7 @@ services:
       - ./tests:/opt/spark-apps/tests
       - ./data:/opt/spark-apps/data
       - ./notebooks:/opt/spark-apps/notebooks
+      - ./.env:/opt/spark-apps/.env
       - spark-warehouse:/opt/spark-warehouse
     depends_on:
       minio:

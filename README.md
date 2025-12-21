@@ -74,7 +74,8 @@ supabase-iceberg-portfolio/
    ```
 
    This starts:
-   - PostgreSQL + TimescaleDB (port 5432)
+
+   - Supabase PostgreSQL + TimescaleDB (port 5432)
    - MinIO object storage (ports 9000, 9001)
    - Spark + Jupyter (ports 8080, 8888)
 
@@ -83,6 +84,7 @@ supabase-iceberg-portfolio/
 3. **Setup Iceberg tables**
 
    Open JupyterLab at http://localhost:8888 and run:
+
    - `notebooks/fix_and_setup_iceberg.ipynb` (one-time setup)
 
    This creates the `portfolio` namespace with 4 Iceberg tables.
@@ -122,6 +124,7 @@ supabase-iceberg-portfolio/
 ```
 
 **What it does:**
+
 - ✅ Fetches stock prices from Yahoo Finance (stock_prices table)
 - ✅ Creates a portfolio (portfolios table)
 - ✅ Generates realistic transactions (transactions table)
@@ -203,8 +206,8 @@ spark = catalog.get_spark_session()
 
 # Query stock prices
 df = spark.sql("""
-    SELECT * 
-    FROM portfolio_catalog.portfolio.stock_prices 
+    SELECT *
+    FROM portfolio_catalog.portfolio.stock_prices
     WHERE stock_symbol = 'AAPL'
     ORDER BY timestamp DESC
     LIMIT 10
@@ -220,12 +223,12 @@ poetry run pytest tests/ -v
 
 ## Access Points
 
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| **Jupyter Lab** | http://localhost:8888 | No auth |
+| Service           | URL                   | Credentials             |
+| ----------------- | --------------------- | ----------------------- |
+| **Jupyter Lab**   | http://localhost:8888 | No auth                 |
 | **MinIO Console** | http://localhost:9001 | minioadmin / minioadmin |
-| **Spark UI** | http://localhost:8080 | - |
-| **PostgreSQL** | localhost:5432 | postgres / postgres |
+| **Spark UI**      | http://localhost:8080 | -                       |
+| **PostgreSQL**    | localhost:5432        | postgres / postgres     |
 
 ### Quick Access Commands
 
@@ -248,12 +251,12 @@ docker-compose restart
 
 After setup, these tables are available in `portfolio_catalog.portfolio`:
 
-| Table | Purpose | Partitioning |
-|-------|---------|--------------|
-| `stock_prices` | Historical stock prices | By date and symbol |
-| `transactions` | Portfolio buy/sell transactions | By date and portfolio |
-| `portfolio_metrics` | Performance metrics (returns, Sharpe ratio) | By date and portfolio |
-| `technical_indicators` | RSI, MACD, SMA, Bollinger Bands | By date and symbol |
+| Table                  | Purpose                                     | Partitioning          |
+| ---------------------- | ------------------------------------------- | --------------------- |
+| `stock_prices`         | Historical stock prices                     | By date and symbol    |
+| `transactions`         | Portfolio buy/sell transactions             | By date and portfolio |
+| `portfolio_metrics`    | Performance metrics (returns, Sharpe ratio) | By date and portfolio |
+| `technical_indicators` | RSI, MACD, SMA, Bollinger Bands             | By date and symbol    |
 
 ## What's Working ✅
 

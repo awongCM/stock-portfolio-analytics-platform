@@ -7,7 +7,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load .env.local first if it exists (for local development), then .env
+if os.path.exists('.env.local'):
+    load_dotenv('.env.local', override=True)
+else:
+    load_dotenv()
 
 
 class SupabaseConnection:
@@ -28,7 +32,8 @@ class SupabaseConnection:
     
     def get_postgres_engine(self) -> Engine:
         """Get SQLAlchemy engine for direct PostgreSQL access."""
-        host = os.getenv("POSTGRES_HOST", "postgres")  # Default to Docker service name
+        # Default to localhost when running from host terminal
+        host = os.getenv("POSTGRES_HOST", "localhost")
         port = os.getenv("POSTGRES_PORT", "5432")
         db = os.getenv("POSTGRES_DB", "portfolio")
         user = os.getenv("POSTGRES_USER", "postgres")
@@ -51,7 +56,7 @@ class SupabaseConnection:
 
 def get_postgres_engine() -> Engine:
     """Helper function to get PostgreSQL engine directly."""
-    host = os.getenv("POSTGRES_HOST", "postgres")
+    host = os.getenv("POSTGRES_HOST", "localhost")
     port = os.getenv("POSTGRES_PORT", "5432")
     db = os.getenv("POSTGRES_DB", "portfolio")
     user = os.getenv("POSTGRES_USER", "postgres")

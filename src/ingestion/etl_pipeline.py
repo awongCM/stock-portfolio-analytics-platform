@@ -303,12 +303,12 @@ class PortfolioETLPipeline:
             
             # Export stock prices
             logger.info("\nExporting stock prices to Iceberg...")
-            exporter.export_stock_prices()
+            exporter.export_stock_prices_to_iceberg()
             logger.info("✓ Stock prices exported")
             
             # Export transactions
             logger.info("\nExporting transactions to Iceberg...")
-            exporter.export_transactions()
+            exporter.export_transactions_to_iceberg()
             logger.info("✓ Transactions exported")
             
         except Exception as e:

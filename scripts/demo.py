@@ -30,9 +30,6 @@ def main():
     supabase_conn = SupabaseConnection()
     engine = supabase_conn.get_postgres_engine()
     
-    portfolio_repo = SupabaseRepository("portfolios")
-    stock_repo = SupabaseRepository("stocks")
-    
     print("   ✓ Connected to PostgreSQL")
     
     # Step 2: Ingest stock data
