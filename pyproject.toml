@@ -2,7 +2,7 @@
 name = "stock-portfolio-analytics-platform"
 version = "0.1.0"
 description = "Stock portfolio analytics platform combining PostgreSQL, Apache Iceberg, and Spark for comprehensive performance evaluation"
-authors = ["Andy Wong <andy@example.com>"]
+authors = ["Andy Wong <awong.cm@gmail.com>"]
 readme = "README.md"
 packages = [{ include = "src" }]
 
