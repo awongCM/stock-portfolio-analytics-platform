@@ -1,4 +1,4 @@
-# Quick Reference
+# Stock Portfolio Analytics Platform - Quick Reference
 
 ## Common Commands
 

@@ -1,4 +1,4 @@
-# Supabase + Apache Iceberg Portfolio Analytics
+# Stock Portfolio Analytics Platform
 
 A modern data analytics platform combining PostgreSQL/TimescaleDB for operational data and Apache Iceberg for analytical workloads, focused on portfolio stock performance evaluation.
 
@@ -32,7 +32,7 @@ A modern data analytics platform combining PostgreSQL/TimescaleDB for operationa
 ## Project Structure
 
 ```
-supabase-iceberg-portfolio/
+stock-portfolio-analytics-platform/
 ├── src/
 │   ├── ingestion/         # Stock data ingestion (Yahoo Finance)
 │   ├── analytics/         # Portfolio performance & technical indicators

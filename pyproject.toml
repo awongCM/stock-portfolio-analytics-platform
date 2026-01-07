@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "supabase-iceberg-portfolio"
+name = "stock-portfolio-analytics-platform"
 version = "0.1.0"
-description = "Portfolio stock performance evaluation using Supabase and Apache Iceberg"
+description = "Stock portfolio analytics platform combining PostgreSQL, Apache Iceberg, and Spark for comprehensive performance evaluation"
 authors = ["Andy Wong <andy@example.com>"]
 readme = "README.md"
 packages = [{ include = "src" }]

@@ -1,4 +1,4 @@
-# ✅ Portfolio Analytics System - Working Demo
+# ✅ Stock Portfolio Analytics Platform - Working Demo
 
 ## System Status
 
