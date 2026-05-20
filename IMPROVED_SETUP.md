@@ -7,23 +7,27 @@ The foundation has been improved for **fully automated initialization**. Now whe
 ## Key Improvements
 
 ### 1. **Automatic Iceberg Initialization**
+
 - `scripts/init-iceberg.py` - Runs automatically inside Spark container
 - Creates all Iceberg tables (stock_prices, transactions, portfolio_metrics, technical_indicators)
 - Waits for MinIO to be ready before initializing
 
 ### 2. **Proper Dependency Management**
+
 - Services use healthchecks and proper `depends_on` conditions
 - MinIO must be healthy before minio-setup runs
 - Spark waits for both MinIO and PostgreSQL to be ready
 - No more arbitrary sleep timers
 
 ### 3. **Container-Level Initialization**
+
 - `scripts/container-init.sh` - Entry point for Spark container
 - Starts Spark Master
 - Initializes Iceberg tables in background
 - Starts Jupyter Lab as foreground process
 
 ### 4. **Enhanced Start Script**
+
 - `scripts/start-services.sh` - Improved with proper health checks
 - Waits for each service to be truly ready (not just running)
 - Provides clear status updates with ✓ checkmarks
@@ -38,6 +42,7 @@ The foundation has been improved for **fully automated initialization**. Now whe
 ```
 
 This will:
+
 1. ✅ Start all Docker services
 2. ✅ Wait for PostgreSQL to be ready
 3. ✅ Initialize database schema (via migrations)
@@ -74,6 +79,7 @@ curl http://localhost:9000/minio/health/live
 ## Architecture Changes
 
 ### docker-compose.yaml
+
 - Added healthchecks to all services
 - Changed `depends_on` to use conditions
 - Spark now uses `container-init.sh` as entry point
@@ -109,11 +115,11 @@ If you prefer the old manual approach, you can:
 
 1. Revert to old start script
 2. Run setup steps manually:
-   ```bash
+  ```bash
    docker-compose up -d
    ./scripts/setup-iceberg.sh  # manual
    ./scripts/insert-sample-data.sh
-   ```
+  ```
 
 ## Testing the Improved Setup
 

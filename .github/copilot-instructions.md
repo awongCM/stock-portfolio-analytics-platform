@@ -29,7 +29,7 @@ spark = catalog.get_spark_session()  # Pre-configured with Iceberg + MinIO crede
 result = spark.sql(f"SELECT * FROM {catalog.catalog_name}.portfolio.stock_prices")
 ```
 
-Key config in [Dockerfile](Dockerfile#L43-L49): PyIceberg with S3fs for MinIO backend. **Never hardcode credentials** - use environment variables from Docker containers (minioadmin:minioadmin, access via http://minio:9000).
+Key config in [Dockerfile](Dockerfile#L43-L49): PyIceberg with S3fs for MinIO backend. **Never hardcode credentials** - use environment variables from Docker containers (minioadmin:minioadmin, access via [http://minio:9000](http://minio:9000)).
 
 ### 3. ETL Pipeline Architecture (`src/ingestion/etl_pipeline.py`)
 
@@ -110,11 +110,13 @@ All infrastructure components log to stdout (captured by docker logs).
 
 ### External Services (Docker Compose)
 
+
 | Service      | Container Host | Local Port | Credentials           | Purpose                            |
 | ------------ | -------------- | ---------- | --------------------- | ---------------------------------- |
 | PostgreSQL   | postgres:5432  | 5432       | postgres:postgres     | Operational DB                     |
 | MinIO        | minio:9000     | 9000,9001  | minioadmin:minioadmin | S3-compatible object storage       |
 | Spark Master | spark:7077     | 8080,4040  | None                  | Distributed computing + Jupyter UI |
+
 
 ### Python Dependencies (pyproject.toml)
 
@@ -224,6 +226,7 @@ def test_portfolio_analyzer_with_iceberg():
 
 ## File Locations for Key Patterns
 
+
 | Pattern                    | File                                                                     |
 | -------------------------- | ------------------------------------------------------------------------ |
 | Catalog initialization     | [src/iceberg/catalog.py](src/iceberg/catalog.py)                         |
@@ -232,6 +235,7 @@ def test_portfolio_analyzer_with_iceberg():
 | Setup scripts              | [scripts/](scripts/) (shell wrappers around Python)                      |
 | Sample data generation     | [scripts/create-sample-portfolio.py](scripts/create-sample-portfolio.py) |
 | Jupyter notebooks          | [notebooks/](notebooks/) (e.g., fix_and_setup_iceberg.ipynb)             |
+
 
 ## Environment Configuration
 

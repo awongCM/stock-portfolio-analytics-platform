@@ -61,49 +61,35 @@ stock-portfolio-analytics-platform/
 ### Setup (5 minutes)
 
 1. **Install Python dependencies**
-
-   ```bash
+  ```bash
    poetry install
-   ```
-
+  ```
 2. **Start all services**
-
-   ```bash
+  ```bash
    chmod +x scripts/*.sh
    ./scripts/start-services.sh
-   ```
-
+  ```
    This starts:
-
-   - Supabase PostgreSQL + TimescaleDB (port 5432)
-   - MinIO object storage (ports 9000, 9001)
-   - Spark + Jupyter (ports 8080, 8888)
-
+  - Supabase PostgreSQL + TimescaleDB (port 5432)
+  - MinIO object storage (ports 9000, 9001)
+  - Spark + Jupyter (ports 8080, 8888)
    Wait ~30 seconds for services to be ready.
-
 3. **Setup Iceberg tables**
-
-   Open JupyterLab at http://localhost:8888 and run:
-
-   - `notebooks/fix_and_setup_iceberg.ipynb` (one-time setup)
-
+  Open JupyterLab at [http://localhost:8888](http://localhost:8888) and run:
+  - `notebooks/fix_and_setup_iceberg.ipynb` (one-time setup)
    This creates the `portfolio` namespace with 4 Iceberg tables.
-
 4. **Generate sample data**
-
-   ```bash
+  ```bash
    # Insert 30 days of stock prices (AAPL, MSFT, GOOGL, AMZN, TSLA)
    ./scripts/insert-sample-data.sh
 
    # Create a sample portfolio with transactions
    ./scripts/create-sample-portfolio.sh
-   ```
-
+  ```
 5. **Verify everything works**
-
-   ```bash
+  ```bash
    ./scripts/test-analytics.sh
-   ```
+  ```
 
 ## Development Workflow
 
@@ -176,7 +162,7 @@ FROM stocks WHERE symbol = 'AAPL';
 
 ### 3. Analytics & Visualization
 
-Open **JupyterLab** at http://localhost:8888:
+Open **JupyterLab** at [http://localhost:8888](http://localhost:8888):
 
 ```python
 import sys
@@ -223,12 +209,14 @@ poetry run pytest tests/ -v
 
 ## Access Points
 
-| Service           | URL                   | Credentials             |
-| ----------------- | --------------------- | ----------------------- |
-| **Jupyter Lab**   | http://localhost:8888 | No auth                 |
-| **MinIO Console** | http://localhost:9001 | minioadmin / minioadmin |
-| **Spark UI**      | http://localhost:8080 | -                       |
-| **PostgreSQL**    | localhost:5432        | postgres / postgres     |
+
+| Service           | URL                                            | Credentials             |
+| ----------------- | ---------------------------------------------- | ----------------------- |
+| **Jupyter Lab**   | [http://localhost:8888](http://localhost:8888) | No auth                 |
+| **MinIO Console** | [http://localhost:9001](http://localhost:9001) | minioadmin / minioadmin |
+| **Spark UI**      | [http://localhost:8080](http://localhost:8080) | -                       |
+| **PostgreSQL**    | localhost:5432                                 | postgres / postgres     |
+
 
 ### Quick Access Commands
 
@@ -251,12 +239,14 @@ docker-compose restart
 
 After setup, these tables are available in `portfolio_catalog.portfolio`:
 
+
 | Table                  | Purpose                                     | Partitioning          |
 | ---------------------- | ------------------------------------------- | --------------------- |
 | `stock_prices`         | Historical stock prices                     | By date and symbol    |
 | `transactions`         | Portfolio buy/sell transactions             | By date and portfolio |
 | `portfolio_metrics`    | Performance metrics (returns, Sharpe ratio) | By date and portfolio |
 | `technical_indicators` | RSI, MACD, SMA, Bollinger Bands             | By date and symbol    |
+
 
 ## What's Working ✅
 

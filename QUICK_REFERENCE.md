@@ -62,12 +62,14 @@ docker-compose logs --tail=100 spark
 
 ## Access Points
 
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| **Jupyter Lab** | http://localhost:8888 | No authentication |
-| **MinIO Console** | http://localhost:9001 | minioadmin / minioadmin |
-| **Spark Master UI** | http://localhost:8080 | - |
-| **PostgreSQL** | localhost:5432 | postgres / postgres |
+
+| Service             | URL                                            | Credentials             |
+| ------------------- | ---------------------------------------------- | ----------------------- |
+| **Jupyter Lab**     | [http://localhost:8888](http://localhost:8888) | No authentication       |
+| **MinIO Console**   | [http://localhost:9001](http://localhost:9001) | minioadmin / minioadmin |
+| **Spark Master UI** | [http://localhost:8080](http://localhost:8080) | -                       |
+| **PostgreSQL**      | localhost:5432                                 | postgres / postgres     |
+
 
 ## SQL Quick Queries
 
@@ -172,6 +174,7 @@ docker-compose up -d
 ### Iceberg Connection Errors
 
 Run the fix notebook:
+
 ```
 Open: http://localhost:8888
 Run: notebooks/fix_and_setup_iceberg.ipynb
@@ -209,7 +212,7 @@ docker system prune -a  # Clean up everything
 ## Development Workflow
 
 1. **Make code changes** in `src/` directory
-2. **Test in Jupyter** at http://localhost:8888
+2. **Test in Jupyter** at [http://localhost:8888](http://localhost:8888)
 3. **Run unit tests**: `poetry run pytest tests/`
 4. **View logs** for debugging
 5. **Commit changes** when working
@@ -338,6 +341,7 @@ poetry install
 
 ### Key Tables
 
+
 | Table                 | Description                     |
 | --------------------- | ------------------------------- |
 | `portfolios`          | User portfolios                 |
@@ -346,6 +350,7 @@ poetry install
 | `transactions`        | Buy/sell transactions           |
 | `portfolio_holdings`  | Current positions               |
 | `portfolio_snapshots` | Historical performance          |
+
 
 ### Common Queries
 
@@ -401,7 +406,7 @@ ICEBERG_WAREHOUSE=s3a://iceberg-warehouse/
 
 ### Start Jupyter Lab
 
-Already running at http://localhost:8888
+Already running at [http://localhost:8888](http://localhost:8888)
 
 ### Available Notebooks
 
@@ -409,14 +414,14 @@ Already running at http://localhost:8888
 
 ### Create New Notebook
 
-1. Open http://localhost:8888
+1. Open [http://localhost:8888](http://localhost:8888)
 2. Click "New" → "Python 3"
 3. Import modules:
-   ```python
+  ```python
    import sys
    sys.path.append('/opt/spark-apps')
    from src.utils.supabase_client import *
-   ```
+  ```
 
 ## Current Data Storage
 
@@ -453,3 +458,4 @@ To enable: Add AWS SDK bundle JAR to `/opt/spark/jars/`
 - Documentation: See `README.md` and `GETTING_STARTED.md`
 - Issues: Check Docker logs for errors
 - Community: Apache Iceberg, Supabase, PySpark docs
+

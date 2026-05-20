@@ -24,6 +24,7 @@ chmod +x scripts/*.sh
 ```
 
 Services started:
+
 - PostgreSQL + TimescaleDB (port 5432)
 - MinIO object storage (ports 9000, 9001)
 - Spark + Jupyter (ports 8080, 8888, 4040)
@@ -34,7 +35,7 @@ Wait ~30 seconds for services to be healthy.
 
 **Option A: Using Jupyter Notebook (Recommended)**
 
-1. Open http://localhost:8888
+1. Open [http://localhost:8888](http://localhost:8888)
 2. Open `notebooks/fix_and_setup_iceberg.ipynb`
 3. Run all cells
 
@@ -45,6 +46,7 @@ Wait ~30 seconds for services to be healthy.
 ```
 
 This creates 4 Iceberg tables in the `portfolio` namespace:
+
 - `stock_prices` - Historical stock data
 - `transactions` - Portfolio transactions
 - `portfolio_metrics` - Performance metrics
@@ -67,16 +69,19 @@ This creates 4 Iceberg tables in the `portfolio` namespace:
 ```
 
 You should see:
+
 - Portfolio holdings and P/L
 - Technical indicators for AAPL (RSI, SMA, Bollinger Bands)
 
 ## Access Services
 
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| Jupyter Lab | http://localhost:8888 | No auth |
-| MinIO Console | http://localhost:9001 | minioadmin / minioadmin |
-| Spark UI | http://localhost:8080 | - |
+
+| Service       | URL                                            | Credentials             |
+| ------------- | ---------------------------------------------- | ----------------------- |
+| Jupyter Lab   | [http://localhost:8888](http://localhost:8888) | No auth                 |
+| MinIO Console | [http://localhost:9001](http://localhost:9001) | minioadmin / minioadmin |
+| Spark UI      | [http://localhost:8080](http://localhost:8080) | -                       |
+
 
 ### PostgreSQL Access
 
@@ -133,6 +138,7 @@ docker exec portfolio-postgres psql -U postgres -d portfolio -c "SELECT COUNT(*)
 5. Build custom analytics and visualizations
 
 See the main [README.md](README.md) for detailed usage examples.
+
 ```
 
 This generates realistic price data for AAPL, MSFT, GOOGL, AMZN, and TSLA.
@@ -162,11 +168,11 @@ You should see:
 
 ### Check Services
 
-**MinIO Console**: http://localhost:9001 (minioadmin/minioadmin)
+**MinIO Console**: [http://localhost:9001](http://localhost:9001) (minioadmin/minioadmin)
 
 - Verify `iceberg-warehouse` bucket exists
 
-**JupyterLab**: http://localhost:8888
+**JupyterLab**: [http://localhost:8888](http://localhost:8888)
 
 - Open existing notebooks or create new ones
 
@@ -219,7 +225,7 @@ LIMIT 10;
 
 ### Use JupyterLab
 
-Open http://localhost:8888 and create a notebook:
+Open [http://localhost:8888](http://localhost:8888) and create a notebook:
 
 ```python
 import sys
@@ -278,15 +284,15 @@ docker exec portfolio-postgres psql -U postgres -d portfolio -c "SELECT COUNT(*)
 ## Development Workflow
 
 1. **Modify code** in `src/` directory
-2. **Test in Jupyter** at http://localhost:8888
+2. **Test in Jupyter** at [http://localhost:8888](http://localhost:8888)
 3. **Run unit tests**:
-   ```bash
+  ```bash
    poetry run pytest tests/
-   ```
+  ```
 4. **Submit Spark jobs**:
-   ```bash
+  ```bash
    docker-compose exec spark spark-submit --master local[*] /opt/spark-apps/your_job.py
-   ```
+  ```
 
 ## Stopping Services
 
@@ -306,3 +312,4 @@ docker-compose down -v
 - [PySpark Documentation](https://spark.apache.org/docs/latest/api/python/)
 - [Supabase Documentation](https://supabase.com/docs)
 - [TimescaleDB Documentation](https://docs.timescale.com/)
+
