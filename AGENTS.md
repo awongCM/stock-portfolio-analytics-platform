@@ -1,0 +1,123 @@
+# Agent guide — Stock Portfolio Analytics Platform
+
+Onboarding for humans and AI assistants. **Primary goal:** build PySpark + lakehouse skills to lead data engineering projects. Prefer teaching and verification over speed-only changes.
+
+## Read first
+
+| Doc | Purpose |
+|-----|---------|
+| [.github/copilot-instructions.md](.github/copilot-instructions.md) | Architecture, conventions, integration points (deep reference) |
+| [README.md](README.md) | Quick start, project layout |
+| [QUICK_REFERENCE.md](QUICK_REFERENCE.md) | Commands, URLs, SQL snippets |
+| [GETTING_STARTED.md](GETTING_STARTED.md) | First-time setup |
+| [architecture.drawio](architecture.drawio) | Data flow diagram |
+
+## Stack
+
+- **OLTP:** PostgreSQL 15 + TimescaleDB (port 5432)
+- **Lake:** Apache Iceberg 1.4.3 on MinIO (S3-compatible)
+- **Compute:** Apache Spark 3.5 + PySpark (Docker `portfolio-spark`)
+- **Python:** 3.11+, Poetry (`pyproject.toml`)
+
+## Data flow
+
+```text
+Yahoo Finance → ingestion (Postgres) → optional export → Iceberg on MinIO → PySpark analytics
+```
+
+## Runtime: host vs container
+
+| Context | Postgres host | Spark / Iceberg |
+|---------|---------------|-----------------|
+| **Host** (`poetry run pytest`, local scripts) | `localhost` — set in `.env.local` | Not available unless you point at remote Spark |
+| **Docker** (`portfolio-spark`, `portfolio-postgres`) | `postgres` | `minio`, catalog via `IcebergCatalog` |
+
+**Spark session:** always use `IcebergCatalog().get_spark_session()` from `src/iceberg/catalog.py`. Do not duplicate Spark/Iceberg/S3A config.
+
+```python
+from src.iceberg.catalog import IcebergCatalog
+
+catalog = IcebergCatalog()
+spark = catalog.get_spark_session()
+spark.sql(f"SELECT * FROM {catalog.catalog_name}.portfolio.stock_prices LIMIT 5").show()
+```
+
+## Module map
+
+| Path | Role |
+|------|------|
+| `src/ingestion/` | yfinance ETL, Postgres load, Iceberg export |
+| `src/iceberg/` | Catalog, schemas, table management |
+| `src/analytics/` | `PortfolioAnalyzer`, `TechnicalIndicators` (PySpark on Iceberg) |
+| `src/utils/` | `supabase_client.py` — DB connections |
+| `scripts/` | Shell wrappers — prefer these over ad-hoc commands |
+| `notebooks/` | Jupyter at http://localhost:8888 (`sys.path.append('/opt/spark-apps')`) |
+
+## Iceberg contract
+
+- **Catalog:** `portfolio_catalog`
+- **Namespace:** `portfolio`
+- **Tables:** `stock_prices`, `transactions`, `portfolio_metrics`, `technical_indicators`
+- **Tickers:** uppercase (e.g. `AAPL`)
+- Setup is **idempotent** (namespace/table create may no-op on repeat)
+
+## Commands
+
+```bash
+# Setup
+poetry install
+chmod +x scripts/*.sh
+./scripts/start-services.sh
+
+# Populate OLTP + sample portfolio
+./scripts/run-etl-pipeline.sh
+
+# Export Postgres → Iceberg (when lake is empty)
+./scripts/export-to-iceberg.sh
+
+# Verify analytics in Spark container
+./scripts/test-analytics.sh
+
+# Tests (host)
+poetry run pytest
+poetry run pytest -m integration   # requires Docker services up
+```
+
+**UIs:** Spark http://localhost:8080 · Jupyter http://localhost:8888 · MinIO http://localhost:9001
+
+## Agent behavior (learning mode)
+
+1. **Teach by default** — After changes, add a short **Lead takeaway** (concept, how this repo implements it, production pitfall).
+2. **Extend existing code** — Prefer `PortfolioAnalyzer`, `IcebergCatalog`, `PortfolioETLPipeline` over new one-off scripts.
+3. **Verify Spark/Iceberg in Docker** — Host unit tests alone are not enough for analytics changes.
+4. **Use project skills** — See [.cursor/skills/](.cursor/skills/) for runbooks:
+   - `pyspark-iceberg-analytics` — new metrics / Spark SQL
+   - `run-and-verify-pipeline` — ETL, sample data, row counts
+   - `debug-spark-iceberg-local` — MinIO, catalog, JAR issues
+   - `data-engineering-design-review` — design before large diffs
+
+## Extension checklist (analytics)
+
+1. Add method on `PortfolioAnalyzer` or `TechnicalIndicators` in `src/analytics/`
+2. Read from `{catalog_name}.portfolio.<table>` via Spark SQL or DataFrame API
+3. Unit test with mocked Spark (`tests/test_analytics.py`)
+4. Optional `@pytest.mark.integration` when Docker is up
+5. Run `./scripts/test-analytics.sh` or prove in a notebook
+
+## Sensitive areas
+
+- Do not hardcode MinIO credentials — use env vars / Docker defaults
+- Do not rename catalog, namespace, or core table names without migration plan
+- Avoid `collect()` on large DataFrames in production-style code
+- f-string SQL with `portfolio_id` is acceptable in POC; prefer temp views / parameters when hardening
+
+## Curriculum map (repo → leadership skills)
+
+| Repo area | Competency |
+|-----------|------------|
+| `etl_pipeline.py` | Batch ETL, validation, logging |
+| `iceberg_exporter.py` | JDBC read, lake load, incremental design |
+| `catalog.py` / `init-iceberg.py` | Catalogs, warehouse, S3A |
+| `portfolio_performance.py` | Spark SQL, windows, aggregations |
+| `technical_indicators.py` | Stateful analytics, `Window` specs |
+| Docker + `scripts/` | Local pipeline ops, reproducible runs |
