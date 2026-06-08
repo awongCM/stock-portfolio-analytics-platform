@@ -1,0 +1,14 @@
+---
+description: PySpark analytics conventions for PortfolioAnalyzer and technical indicators
+globs: src/analytics/**
+alwaysApply: false
+---
+
+# PySpark analytics
+
+- Extend `PortfolioAnalyzer` or `TechnicalIndicators`; avoid parallel one-off Spark scripts.
+- Catalog: `portfolio_catalog.portfolio.<table>` via `self.catalog_name` from `IcebergCatalog`.
+- Prefer DataFrame API + `spark.sql`; filter by `stock_symbol` and date early.
+- Avoid `collect()` / unbounded `toPandas()` on pipeline code.
+- Add unit tests with mocked Spark in `tests/test_analytics.py`; verify in Docker with `./scripts/test-analytics.sh`.
+- Skill: `pyspark-iceberg-analytics` for full workflow.

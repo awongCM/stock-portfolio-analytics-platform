@@ -1,0 +1,15 @@
+---
+description: ETL and stock ingestion conventions for Yahoo Finance and Postgres load
+globs: src/ingestion/**
+alwaysApply: false
+---
+
+# Ingestion and ETL
+
+- Orchestrate via `PortfolioETLPipeline` and `ETLConfig` in `src/ingestion/etl_pipeline.py`.
+- Flow: Extract (yfinance) → Transform → Load (Postgres) → optional sample portfolio.
+- Use `logging.getLogger(__name__)`; log symbol and date range at start.
+- Uppercase ticker symbols in config and DB.
+- CLI: `./scripts/run-etl-pipeline.sh` with `--days`, `--symbols`, `--cash`.
+- Lake export is separate: `SupabaseToIcebergExporter` / `./scripts/export-to-iceberg.sh`.
+- Skill: `extend-etl-symbol` to add symbols or date ranges.

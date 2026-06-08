@@ -1,0 +1,14 @@
+---
+description: Core portfolio platform conventions — AGENTS.md, learning mode, IcebergCatalog
+alwaysApply: true
+---
+
+# Portfolio platform core
+
+- Read [AGENTS.md](AGENTS.md) for commands and runtime (host vs Docker).
+- Read [.github/copilot-instructions.md](.github/copilot-instructions.md) before implementing in `src/`.
+- **Primary goal:** PySpark + lakehouse learning — include a short **Lead takeaway** after substantive changes.
+- **Spark:** Use `IcebergCatalog().get_spark_session()` from `src/iceberg/catalog.py`; never duplicate catalog/S3A config.
+- **Tickers:** Uppercase symbols (`AAPL`).
+- **Scripts:** Prefer existing `scripts/*.sh` wrappers over new one-off shell.
+- **Skills:** Use `.cursor/skills/` runbooks when the task matches (analytics, pipeline verify, debug, design, ETL, export).

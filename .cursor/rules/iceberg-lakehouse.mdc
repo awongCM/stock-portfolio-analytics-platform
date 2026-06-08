@@ -1,0 +1,14 @@
+---
+description: Apache Iceberg catalog, schemas, and table management conventions
+globs: src/iceberg/**
+alwaysApply: false
+---
+
+# Iceberg lakehouse
+
+- Catalog `portfolio_catalog`, namespace `portfolio`; four tables: `stock_prices`, `transactions`, `portfolio_metrics`, `technical_indicators`.
+- Schemas in `src/iceberg/schemas.py` — use `pyiceberg.types` (DecimalType, TimestampType).
+- Setup is idempotent (try/except on namespace/table create).
+- Writes: `writeTo(...).using("iceberg")` — know append vs `createOrReplace` impact before changing export code.
+- Do not rename catalog/namespace/tables without a migration plan.
+- Skill: `iceberg-export-incremental` for Postgres → lake export patterns.

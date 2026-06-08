@@ -1,0 +1,14 @@
+---
+description: Docker, Spark container, and shell script runtime conventions
+globs: Dockerfile,docker-compose.yaml,scripts/**
+alwaysApply: false
+---
+
+# Docker and Spark runtime
+
+- In container: hostnames `postgres`, `minio`, `spark`; mount `/opt/spark-apps`.
+- Python in container: `sys.path.append('/opt/spark-apps')` before importing `src`.
+- Run Spark jobs: `docker exec portfolio-spark python ...` or `docker-compose exec spark`.
+- Copy scripts: `docker cp local.py portfolio-spark:/tmp/` then exec.
+- Prefer `scripts/*.sh` over raw docker commands when a wrapper exists.
+- Skill: `debug-spark-iceberg-local` for catalog, MinIO, JAR issues.

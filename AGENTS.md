@@ -4,14 +4,17 @@ Onboarding for humans and AI assistants. **Primary goal:** build PySpark + lakeh
 
 ## Read first
 
+**Doc layering:** This file is the entry point (~1 screen). For implementation details (schemas, services, Pydantic gap, integration points), read [.github/copilot-instructions.md](.github/copilot-instructions.md) before editing `src/`. Human ops: [README.md](README.md), [QUICK_REFERENCE.md](QUICK_REFERENCE.md), [GETTING_STARTED.md](GETTING_STARTED.md).
 
-| Doc                                                                | Purpose                                                        |
-| ------------------------------------------------------------------ | -------------------------------------------------------------- |
-| [.github/copilot-instructions.md](.github/copilot-instructions.md) | Architecture, conventions, integration points (deep reference) |
-| [README.md](README.md)                                             | Quick start, project layout                                    |
-| [QUICK_REFERENCE.md](QUICK_REFERENCE.md)                           | Commands, URLs, SQL snippets                                   |
-| [GETTING_STARTED.md](GETTING_STARTED.md)                           | First-time setup                                               |
-| [architecture.drawio](architecture.drawio)                         | Data flow diagram                                              |
+
+| Doc                                                                | Purpose                                                           |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| [.github/copilot-instructions.md](.github/copilot-instructions.md) | **Deep reference** — architecture, conventions, schemas, testing  |
+| [README.md](README.md)                                             | Quick start, project layout                                       |
+| [QUICK_REFERENCE.md](QUICK_REFERENCE.md)                           | Commands, URLs, SQL snippets                                      |
+| [GETTING_STARTED.md](GETTING_STARTED.md)                           | First-time setup                                                  |
+| [architecture.drawio](architecture.drawio)                         | Data flow diagram                                                 |
+| [.cursor/rules/](.cursor/rules/)                                   | File-scoped conventions (auto-apply when matching paths are open) |
 
 
 ## Stack
@@ -96,11 +99,24 @@ poetry run pytest -m integration   # requires Docker services up
 1. **Teach by default** — After changes, add a short **Lead takeaway** (concept, how this repo implements it, production pitfall).
 2. **Extend existing code** — Prefer `PortfolioAnalyzer`, `IcebergCatalog`, `PortfolioETLPipeline` over new one-off scripts.
 3. **Verify Spark/Iceberg in Docker** — Host unit tests alone are not enough for analytics changes.
-4. **Use project skills** — See [.cursor/skills/](.cursor/skills/) for runbooks:
+4. **Use project skills** — See [.cursor/skills/](.cursor/skills/) for runbooks (invoke by name or when the task matches the skill description):
   - `pyspark-iceberg-analytics` — new metrics / Spark SQL
   - `run-and-verify-pipeline` — ETL, sample data, row counts
   - `debug-spark-iceberg-local` — MinIO, catalog, JAR issues
   - `data-engineering-design-review` — design before large diffs
+  - `extend-etl-symbol` — add tickers, date range, `ETLConfig`
+  - `iceberg-export-incremental` — Postgres → Iceberg export, append vs replace
+
+
+| Goal                           | Skill                            |
+| ------------------------------ | -------------------------------- |
+| Analytics in `src/analytics/`  | `pyspark-iceberg-analytics`      |
+| Empty tables / pipeline check  | `run-and-verify-pipeline`        |
+| Spark / MinIO / catalog errors | `debug-spark-iceberg-local`      |
+| Schema or incremental design   | `data-engineering-design-review` |
+| New symbol or ETL config       | `extend-etl-symbol`              |
+| Lake export / incremental load | `iceberg-export-incremental`     |
+
 
 ## Extension checklist (analytics)
 

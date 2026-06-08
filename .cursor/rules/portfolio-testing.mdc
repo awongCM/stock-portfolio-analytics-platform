@@ -1,0 +1,13 @@
+---
+description: Pytest conventions for unit and integration tests
+globs: tests/**
+alwaysApply: false
+---
+
+# Testing
+
+- Run on host: `poetry run pytest`; integration: `poetry run pytest -m integration` (Docker up).
+- Mock Spark and DB in unit tests (`pytest-mock`); see `tests/conftest.py` fixtures.
+- Integration tests need `POSTGRES_HOST=localhost` in `.env.local`.
+- Sample IDs: `test-portfolio-123`, symbols `AAPL`, `MSFT`, `GOOGL`.
+- After analytics changes: `./scripts/test-analytics.sh` in Spark container.
