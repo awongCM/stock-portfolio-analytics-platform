@@ -53,7 +53,7 @@ stock-portfolio-analytics-platform/
 
 ### Prerequisites
 
-- **Docker Desktop** (v20.10+)
+- **Docker Desktop** (v20.10+) or **[Colima](https://github.com/abiosoft/colima)**
 - **Docker Compose** (v2.0+)
 - **Python** 3.11+
 - **Poetry** (Python dependency management)

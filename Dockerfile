@@ -9,19 +9,24 @@ RUN apt-get update && apt-get install -y \
     procps \
     && rm -rf /var/lib/apt/lists/*
 
-# Set JAVA_HOME
-ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-arm64
+# Works on both arm64 and amd64 Colima/VM builds
+RUN ln -sf /usr/lib/jvm/java-21-openjdk-* /usr/lib/jvm/java-21-openjdk
+ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk
 ENV PATH=$PATH:$JAVA_HOME/bin
 
-# Install Spark
+# Install Spark (full distro incl. sbin/ for spark-master)
+# Spark 3.5.0 is archived: fast mirrors (dlcdn.apache.org) return 404; only archive.apache.org hosts it.
 ENV SPARK_VERSION=3.5.0
 ENV HADOOP_VERSION=3
-RUN apt-get update && apt-get install -y wget && \
-    wget -q https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz && \
-    tar -xzf spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz && \
-    mv spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION} /opt/spark && \
-    rm spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz && \
-    apt-get clean
+ARG SPARK_TARBALL_URL=https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && \
+    curl -fSL --retry 5 --retry-delay 10 --connect-timeout 30 --max-time 7200 \
+         --progress-bar -o /tmp/spark.tgz "${SPARK_TARBALL_URL}" && \
+    test -s /tmp/spark.tgz && \
+    tar -xzf /tmp/spark.tgz -C /opt && \
+    mv /opt/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION} /opt/spark && \
+    rm /tmp/spark.tgz && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV SPARK_HOME=/opt/spark
 ENV PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin
