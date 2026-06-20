@@ -5,8 +5,11 @@ set -e
 
 echo "Exporting data from Supabase to Iceberg..."
 
+# Ensure Iceberg tables match current schema (drops legacy symbol-partitioned tables)
+./scripts/setup-iceberg.sh
+
 docker-compose exec spark spark-submit \
-  --master local[*] \
+  --master 'local[*]' \
   --packages org.postgresql:postgresql:42.6.0 \
   /opt/spark-apps/scripts/export_to_iceberg.py
 

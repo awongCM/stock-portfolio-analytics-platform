@@ -15,6 +15,8 @@ def main():
     # Export all data
     exporter.export_stock_prices_to_iceberg()
     exporter.export_transactions_to_iceberg()
+    exporter.export_securities_to_iceberg()
+    exporter.export_exchange_rates_to_iceberg()
     
     print("Export completed successfully!")
 

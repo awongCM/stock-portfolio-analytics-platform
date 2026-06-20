@@ -27,6 +27,12 @@ class ETLConfig:
     portfolio_name: str
     portfolio_description: str
     initial_cash: float = 100000.0  # Default $100k portfolio
+    watchlist_path: Optional[str] = None
+    regions: Optional[List[str]] = None
+    base_currency: str = "AUD"
+    ingest_fx: bool = True
+    request_delay: float = 2.0
+    batch_size: int = 10
 
 
 class PortfolioETLPipeline:
@@ -53,10 +59,23 @@ class PortfolioETLPipeline:
         self.ingestion = StockDataIngestion()
         self.engine = get_postgres_engine()
         self.text = text
-        
+        self._symbol_metadata: Dict[str, Dict] = {}
+
+        if config.watchlist_path:
+            symbols, self._symbol_metadata, _, base_ccy = self.ingestion.load_watchlist(
+                config.watchlist_path, config.regions
+            )
+            config.symbols = symbols
+            if config.base_currency == "AUD" and base_ccy:
+                config.base_currency = base_ccy
+
         logger.info("ETL Pipeline initialized")
-        logger.info(f"Symbols: {config.symbols}")
+        logger.info(f"Symbols: {len(config.symbols)} tickers")
         logger.info(f"Date range: {config.start_date} to {config.end_date}")
+        if config.watchlist_path:
+            logger.info(f"Watchlist: {config.watchlist_path}")
+            logger.info(f"Regions: {config.regions or 'all'}")
+            logger.info(f"Base currency: {config.base_currency}")
     
     def extract_and_load_stock_prices(self) -> Dict[str, int]:
         """
@@ -70,26 +89,40 @@ class PortfolioETLPipeline:
         logger.info("=" * 60)
         
         results = {}
-        
-        for symbol in self.config.symbols:
-            try:
-                logger.info(f"\nProcessing {symbol}...")
-                
-                # Ingest stock prices
-                count = self.ingestion.ingest_stock_prices(
-                    symbol=symbol,
-                    start_date=self.config.start_date,
-                    end_date=self.config.end_date
-                )
-                
-                results[symbol] = count
-                logger.info(f"  ✓ Inserted {count} price records for {symbol}")
-                
-            except Exception as e:
-                logger.error(f"  ✗ Error processing {symbol}: {e}")
-                results[symbol] = 0
-        
-        total = sum(results.values())
+
+        if self.config.watchlist_path:
+            logger.info("Using multi-region sector watchlist ingestion...")
+            results = self.ingestion.ingest_watchlist(
+                watchlist_path=self.config.watchlist_path,
+                regions=self.config.regions,
+                start_date=self.config.start_date,
+                end_date=self.config.end_date,
+                ingest_fx=self.config.ingest_fx,
+                request_delay=self.config.request_delay,
+                batch_size=self.config.batch_size,
+            )
+            for symbol, count in results.items():
+                if symbol == "__fx__":
+                    logger.info(f"  ✓ Ingested {count} FX rate records")
+                elif count > 0:
+                    logger.info(f"  ✓ {symbol}: {count} price records")
+        else:
+            for symbol in self.config.symbols:
+                try:
+                    logger.info(f"\nProcessing {symbol}...")
+                    count = self.ingestion.ingest_stock_prices(
+                        symbol=symbol,
+                        start_date=self.config.start_date,
+                        end_date=self.config.end_date,
+                        metadata=self._symbol_metadata.get(symbol.upper()),
+                    )
+                    results[symbol] = count
+                    logger.info(f"  ✓ Inserted {count} price records for {symbol}")
+                except Exception as e:
+                    logger.error(f"  ✗ Error processing {symbol}: {e}")
+                    results[symbol] = 0
+
+        total = sum(v for k, v in results.items() if k != "__fx__")
         logger.info(f"\n✓ Total price records inserted: {total}")
         
         return results
@@ -107,12 +140,13 @@ class PortfolioETLPipeline:
         
         with self.engine.connect() as conn:
             result = conn.execute(self.text("""
-                INSERT INTO portfolios (name, description, created_at)
-                VALUES (:name, :description, NOW())
+                INSERT INTO portfolios (name, description, currency, created_at)
+                VALUES (:name, :description, :currency, NOW())
                 RETURNING id
             """), {
                 "name": self.config.portfolio_name,
-                "description": self.config.portfolio_description
+                "description": self.config.portfolio_description,
+                "currency": self.config.base_currency,
             })
             conn.commit()
             portfolio_id = result.fetchone()[0]
@@ -310,6 +344,16 @@ class PortfolioETLPipeline:
             logger.info("\nExporting transactions to Iceberg...")
             exporter.export_transactions_to_iceberg()
             logger.info("✓ Transactions exported")
+
+            # Export securities dimension
+            logger.info("\nExporting securities to Iceberg...")
+            exporter.export_securities_to_iceberg()
+            logger.info("✓ Securities exported")
+
+            # Export FX rates for multi-currency analytics
+            logger.info("\nExporting exchange rates to Iceberg...")
+            exporter.export_exchange_rates_to_iceberg()
+            logger.info("✓ Exchange rates exported")
             
         except Exception as e:
             logger.warning(f"⚠ Iceberg export skipped: {e}")
@@ -351,14 +395,17 @@ class PortfolioETLPipeline:
             
             end_time = datetime.now()
             duration = (end_time - start_time).total_seconds()
-            
+            price_total = sum(
+                v for k, v in price_results.items() if k != "__fx__"
+            )
+
             summary = {
                 "status": "SUCCESS",
                 "duration_seconds": duration,
                 "portfolio_id": portfolio_id,
                 "portfolio_name": self.config.portfolio_name,
                 "symbols": self.config.symbols,
-                "price_records": sum(price_results.values()),
+                "price_records": price_total,
                 "transactions": transaction_count,
                 "start_time": start_time.isoformat(),
                 "end_time": end_time.isoformat()
@@ -387,7 +434,13 @@ def create_default_pipeline(
     symbols: List[str] = None,
     days: int = 30,
     portfolio_name: str = "Automated Portfolio",
-    initial_cash: float = 100000.0
+    initial_cash: float = 100000.0,
+    watchlist_path: Optional[str] = None,
+    regions: Optional[List[str]] = None,
+    base_currency: str = "AUD",
+    ingest_fx: bool = True,
+    request_delay: float = 2.0,
+    batch_size: int = 10,
 ) -> PortfolioETLPipeline:
     """
     Create a default ETL pipeline with sensible defaults.
@@ -401,19 +454,33 @@ def create_default_pipeline(
     Returns:
         Configured ETL pipeline
     """
-    if symbols is None:
+    if symbols is None and not watchlist_path:
         symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']
-    
+    elif watchlist_path:
+        symbols = []
+
     end_date = datetime.now()
     start_date = end_date - timedelta(days=days)
-    
+
+    desc = (
+        f"APAC sector watchlist portfolio ({regions or 'all regions'}) over {days} days"
+        if watchlist_path
+        else f"Auto-generated portfolio with {len(symbols)} stocks over {days} days"
+    )
+
     config = ETLConfig(
-        symbols=symbols,
+        symbols=symbols or [],
         start_date=start_date.strftime('%Y-%m-%d'),
         end_date=end_date.strftime('%Y-%m-%d'),
         portfolio_name=portfolio_name,
-        portfolio_description=f"Auto-generated portfolio with {len(symbols)} stocks over {days} days",
-        initial_cash=initial_cash
+        portfolio_description=desc,
+        initial_cash=initial_cash,
+        watchlist_path=watchlist_path,
+        regions=regions,
+        base_currency=base_currency,
+        ingest_fx=ingest_fx,
+        request_delay=request_delay,
+        batch_size=batch_size,
     )
     
     return PortfolioETLPipeline(config)
@@ -441,15 +508,33 @@ if __name__ == "__main__":
                         help='Initial cash allocation')
     parser.add_argument('--skip-iceberg', action='store_true',
                         help='Skip Iceberg export step')
+    parser.add_argument('--watchlist', default=None,
+                        help='Path to sector watchlist YAML (e.g. config/sector_watchlist.yaml)')
+    parser.add_argument('--regions', nargs='+', default=None,
+                        help='Filter watchlist regions (AU NZ MY SG)')
+    parser.add_argument('--base-currency', default='AUD',
+                        help='Base reporting currency (default: AUD)')
+    parser.add_argument('--no-fx', action='store_true',
+                        help='Skip FX rate ingestion')
+    parser.add_argument('--request-delay', type=float, default=2.0,
+                        help='Seconds between Yahoo Finance batch requests (default: 2.0)')
+    parser.add_argument('--batch-size', type=int, default=10,
+                        help='Symbols per Yahoo Finance batch download (default: 10)')
     
     args = parser.parse_args()
     
     # Create and run pipeline
     pipeline = create_default_pipeline(
-        symbols=args.symbols,
+        symbols=args.symbols if not args.watchlist else None,
         days=args.days,
         portfolio_name=args.portfolio_name,
-        initial_cash=args.initial_cash
+        initial_cash=args.initial_cash,
+        watchlist_path=args.watchlist,
+        regions=args.regions,
+        base_currency=args.base_currency,
+        ingest_fx=not args.no_fx,
+        request_delay=args.request_delay,
+        batch_size=args.batch_size,
     )
     
     result = pipeline.run(skip_iceberg=args.skip_iceberg)

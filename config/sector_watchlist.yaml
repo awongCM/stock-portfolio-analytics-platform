@@ -1,0 +1,108 @@
+# Curated APAC sector watchlist for multi-region POC
+# 2-3 liquid counters per GICS sector × 4 markets (AU/NZ/MY/SG)
+# Yahoo Finance suffix conventions: .AX .NZ .KL .SI
+
+base_currency: AUD
+
+regions:
+  AU:
+    name: Australia
+    market_code: ASX
+    country_code: AU
+    quote_currency: AUD
+    suffix: .AX
+  NZ:
+    name: New Zealand
+    market_code: NZX
+    country_code: NZ
+    quote_currency: NZD
+    suffix: .NZ
+  MY:
+    name: Malaysia
+    market_code: BURSA
+    country_code: MY
+    quote_currency: MYR
+    suffix: .KL
+  SG:
+    name: Singapore
+    market_code: SGX
+    country_code: SG
+    quote_currency: SGD
+    suffix: .SI
+
+# Yahoo FX pairs for base-currency conversion (AUD reporting)
+fx_pairs:
+  - AUDUSD=X
+  - AUDNZD=X
+  - AUDMYR=X
+  - AUDSGD=X
+  - NZDUSD=X
+  - USDMYR=X
+  - USDSGD=X
+
+sectors:
+  Energy:
+    AU: [WDS.AX, STO.AX, BPT.AX]
+    NZ: [GNE.NZ, CEN.NZ, MEL.NZ]
+    MY: [PETRONM.KL, PETDAG.KL, HIBISKS.KL]
+    SG: [U96.SI, SCI.SI, BN4.SI]
+
+  Materials:
+    AU: [BHP.AX, RIO.AX, FMG.AX]
+    NZ: [OCL.NZ, SKC.NZ, VCT.NZ]
+    MY: [SIME.KL, PPB.KL, ANNUM.KL]
+    SG: [Y92.SI, S63.SI, G13.SI]
+
+  Industrials:
+    AU: [BXB.AX, QAN.AX, TAH.AX]
+    NZ: [AIR.NZ, MFT.NZ, SUM.NZ]
+    MY: [MISC.KL, GENTING.KL, SIME.KL]
+    SG: [C6L.SI, S58.SI, S63.SI]
+
+  Utilities:
+    AU: [AGL.AX, ORG.AX, APA.AX]
+    NZ: [MCY.NZ, MEL.NZ, CEN.NZ]
+    MY: [TENAGA.KL, YTLPOWR.KL, FGVH.KL]
+    SG: [U96.SI, F34.SI, YZJ.SI]
+
+  Healthcare:
+    AU: [CSL.AX, RHC.AX, COH.AX]
+    NZ: [FPH.NZ, RBD.NZ, ARW.NZ]
+    MY: [IHH.KL, PHARMA.KL, DKSH.KL]
+    SG: [BSL.SI, O5RU.SI, 1D0.SI]
+
+  Financials:
+    AU: [CBA.AX, WBC.AX, NAB.AX]
+    NZ: [AIA.NZ, IAG.NZ, MEL.NZ]
+    MY: [MAYBANK.KL, CIMB.KL, PBBANK.KL]
+    SG: [D05.SI, O39.SI, U11.SI]
+
+  Consumer Discretionary:
+    AU: [JBH.AX, WES.AX, HVN.AX]
+    NZ: [BRW.NZ, KMD.NZ, HLG.NZ]
+    MY: [MRDIY.KL, PADINI.KL, HLGLOBAL.KL]
+    SG: [G13.SI, D01.SI, C07.SI]
+
+  Consumer Staples:
+    AU: [WOW.AX, COL.AX, A2M.AX]
+    NZ: [ATM.NZ, SKT.NZ, FCG.NZ]
+    MY: [NESTLE.KL, F&N.KL, DLADY.KL]
+    SG: [F34.SI, Y92.SI, C52.SI]
+
+  Information Technology:
+    AU: [XRO.AX, WTC.AX, CPU.AX]
+    NZ: [VNT.NZ, PGT.NZ, ERD.NZ]
+    MY: [VITROX.KL, GES.KL, KESM.KL]
+    SG: [C06.SI, Z74.SI, S58.SI]
+
+  Communication Services:
+    AU: [TLS.AX, REA.AX, ALL.AX]
+    NZ: [SPK.NZ, SKT.NZ, TWR.NZ]
+    MY: [MAXIS.KL, AXIATA.KL, TIMEC.KL]
+    SG: [Z74.SI, C6L.SI, S63.SI]
+
+  Real Estate:
+    AU: [GMG.AX, SCG.AX, DXS.AX]
+    NZ: [KPG.NZ, VHP.NZ, ARG.NZ]
+    MY: [SPSETIA.KL, IJM.KL, GAMUDA.KL]
+    SG: [C38U.SI, A17U.SI, J69U.SI]

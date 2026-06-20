@@ -20,6 +20,12 @@ SYMBOLS="AAPL MSFT GOOGL AMZN TSLA"
 PORTFOLIO_NAME="ETL Generated Portfolio"
 CASH=100000
 SKIP_ICEBERG=""
+WATCHLIST=""
+REGIONS=""
+BASE_CURRENCY="AUD"
+NO_FX=""
+REQUEST_DELAY="2.0"
+BATCH_SIZE="10"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -29,6 +35,30 @@ while [[ $# -gt 0 ]]; do
             ;;
         --symbols)
             SYMBOLS="$2"
+            shift 2
+            ;;
+        --watchlist)
+            WATCHLIST="$2"
+            shift 2
+            ;;
+        --regions)
+            REGIONS="$2"
+            shift 2
+            ;;
+        --base-currency)
+            BASE_CURRENCY="$2"
+            shift 2
+            ;;
+        --no-fx)
+            NO_FX="--no-fx"
+            shift
+            ;;
+        --request-delay)
+            REQUEST_DELAY="$2"
+            shift 2
+            ;;
+        --batch-size)
+            BATCH_SIZE="$2"
             shift 2
             ;;
         --portfolio-name)
@@ -49,6 +79,12 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  --days N              Number of days of historical data (default: 30)"
             echo "  --symbols \"A B C\"     Space-separated stock symbols (default: AAPL MSFT GOOGL AMZN TSLA)"
+            echo "  --watchlist PATH      Sector watchlist YAML (e.g. config/sector_watchlist.yaml)"
+            echo "  --regions \"AU SG\"     Filter watchlist regions (AU NZ MY SG)"
+            echo "  --base-currency CCY   Base reporting currency (default: AUD)"
+            echo "  --no-fx               Skip FX rate ingestion"
+            echo "  --request-delay SEC   Delay between Yahoo batch requests (default: 2.0)"
+            echo "  --batch-size N        Symbols per batch download (default: 10)"
             echo "  --portfolio-name NAME Name for the portfolio (default: ETL Generated Portfolio)"
             echo "  --cash AMOUNT         Initial cash allocation (default: 100000)"
             echo "  --skip-iceberg        Skip Iceberg export step"
@@ -58,6 +94,7 @@ while [[ $# -gt 0 ]]; do
             echo "  $0"
             echo "  $0 --days 60 --cash 50000"
             echo "  $0 --symbols \"AAPL MSFT\" --days 90"
+            echo "  $0 --watchlist config/sector_watchlist.yaml --regions \"AU SG\" --days 30"
             exit 0
             ;;
         *)
@@ -70,7 +107,13 @@ done
 
 echo "Configuration:"
 echo "  Days of data: $DAYS"
-echo "  Symbols: $SYMBOLS"
+if [[ -n "$WATCHLIST" ]]; then
+    echo "  Watchlist: $WATCHLIST"
+    echo "  Regions: ${REGIONS:-all}"
+    echo "  Base currency: $BASE_CURRENCY"
+else
+    echo "  Symbols: $SYMBOLS"
+fi
 echo "  Portfolio: $PORTFOLIO_NAME"
 echo "  Initial cash: \$$CASH"
 echo ""
@@ -86,19 +129,29 @@ echo ""
 echo "Starting ETL pipeline..."
 echo ""
 
-# Copy the ETL script to container
-docker cp src/ingestion/etl_pipeline.py portfolio-spark:/tmp/etl_pipeline.py
+# Run the ETL pipeline (uses mounted /opt/spark-apps volumes)
+WATCHLIST_ARG=""
+if [[ -n "$WATCHLIST" ]]; then
+    WATCHLIST_ARG="--watchlist /opt/spark-apps/$WATCHLIST"
+fi
 
-# Run the ETL pipeline
-docker exec portfolio-spark python3 /tmp/etl_pipeline.py \
+REGION_ARGS=""
+if [[ -n "$REGIONS" ]]; then
+    REGION_ARGS="--regions $REGIONS"
+fi
+
+docker exec portfolio-spark python3 /opt/spark-apps/src/ingestion/etl_pipeline.py \
     --symbols $SYMBOLS \
     --days $DAYS \
     --portfolio-name "$PORTFOLIO_NAME" \
     --initial-cash $CASH \
+    --base-currency "$BASE_CURRENCY" \
+    --request-delay "$REQUEST_DELAY" \
+    --batch-size "$BATCH_SIZE" \
+    $WATCHLIST_ARG \
+    $REGION_ARGS \
+    $NO_FX \
     $SKIP_ICEBERG
-
-# Clean up
-docker exec portfolio-spark rm /tmp/etl_pipeline.py
 
 echo ""
 echo "=========================================="

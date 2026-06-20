@@ -7,6 +7,13 @@ echo "=========================================="
 echo "Starting Portfolio Analytics Platform"
 echo "=========================================="
 
+# Preflight: Supabase Studio bind mount + env file
+mkdir -p supabase/snippets
+if [ ! -f .env ]; then
+  cp .env.example .env
+  echo "Created .env from .env.example"
+fi
+
 # Start Docker Compose services
 echo "Starting Docker services..."
 docker-compose up -d --build

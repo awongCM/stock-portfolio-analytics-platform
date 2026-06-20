@@ -5,7 +5,7 @@ from typing import Optional, Dict, Any
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import (
     col, sum, avg, stddev, max, min, lag, lead,
-    when, datediff, expr, window, row_number
+    when, datediff, expr, window, row_number, lit, coalesce, first, count
 )
 from pyspark.sql.window import Window
 from decimal import Decimal
@@ -235,3 +235,182 @@ class PortfolioAnalyzer:
             "max_drawdown": max_drawdown,
             "avg_annual_return": avg_return
         }
+
+    def _get_latest_prices_df(self, symbols: list, as_of_date: Optional[str] = None) -> DataFrame:
+        """Latest close price per symbol as of date."""
+        if not as_of_date:
+            as_of_date = datetime.now().isoformat()
+        quoted = ",".join([f"'{s}'" for s in symbols])
+        return self.spark.sql(f"""
+            SELECT stock_symbol, close AS current_price
+            FROM (
+                SELECT stock_symbol, close,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY stock_symbol ORDER BY timestamp DESC
+                    ) AS rn
+                FROM {self.catalog_name}.portfolio.stock_prices
+                WHERE stock_symbol IN ({quoted})
+                  AND timestamp <= '{as_of_date}'
+            )
+            WHERE rn = 1
+        """)
+
+    def _get_securities_df(self) -> DataFrame:
+        """Securities dimension with sector and region metadata."""
+        return self.spark.sql(f"""
+            SELECT
+                stock_symbol,
+                COALESCE(gics_sector_override, gics_sector, 'Unknown') AS gics_sector,
+                gics_sector_code,
+                COALESCE(country_code, 'Unknown') AS country_code,
+                COALESCE(quote_currency, 'USD') AS quote_currency,
+                COALESCE(market_code, 'Unknown') AS market_code
+            FROM {self.catalog_name}.portfolio.securities
+        """)
+
+    def _get_latest_fx_rates_df(self, base_currency: str = "AUD") -> DataFrame:
+        """Latest FX rate per currency pair for conversion to base currency."""
+        return self.spark.sql(f"""
+            SELECT base_currency, quote_currency, rate
+            FROM (
+                SELECT base_currency, quote_currency, rate,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY base_currency, quote_currency
+                        ORDER BY timestamp DESC
+                    ) AS rn
+                FROM {self.catalog_name}.portfolio.exchange_rates
+            )
+            WHERE rn = 1
+        """)
+
+    def _holdings_with_base_value(
+        self,
+        base_currency: str = "AUD",
+        as_of_date: Optional[str] = None,
+    ) -> DataFrame:
+        """Holdings joined with prices, securities, and FX-converted market value."""
+        holdings = self.calculate_current_holdings()
+        symbols = [row.stock_symbol for row in holdings.collect()]
+        if not symbols:
+            return self.spark.createDataFrame(
+                [],
+                "stock_symbol STRING, total_quantity DOUBLE, total_cost DOUBLE, "
+                "average_cost DOUBLE, current_price DOUBLE, gics_sector STRING, "
+                "country_code STRING, quote_currency STRING, market_code STRING, "
+                "local_market_value DOUBLE, fx_multiplier DOUBLE, market_value_base DOUBLE",
+            )
+
+        prices = self._get_latest_prices_df(symbols, as_of_date)
+        securities = self._get_securities_df()
+        fx = self._get_latest_fx_rates_df(base_currency)
+
+        enriched = (
+            holdings
+            .join(prices, on="stock_symbol", how="inner")
+            .join(securities, on="stock_symbol", how="left")
+            .withColumn(
+                "local_market_value",
+                col("total_quantity") * col("current_price"),
+            )
+        )
+
+        # Direct rate: 1 base = rate quote → value_base = local_value / rate
+        direct_fx = fx.filter(col("base_currency") == lit(base_currency)).select(
+            col("quote_currency").alias("fx_quote"),
+            col("rate").alias("direct_rate"),
+        )
+
+        # Inverse rate: 1 quote = rate base → value_base = local_value * rate
+        inverse_fx = fx.filter(col("quote_currency") == lit(base_currency)).select(
+            col("base_currency").alias("inv_base"),
+            col("rate").alias("inverse_rate"),
+        )
+
+        enriched = enriched.join(
+            direct_fx,
+            enriched.quote_currency == direct_fx.fx_quote,
+            how="left",
+        ).join(
+            inverse_fx,
+            enriched.quote_currency == inverse_fx.inv_base,
+            how="left",
+        )
+
+        enriched = enriched.withColumn(
+            "fx_multiplier",
+            when(col("quote_currency") == lit(base_currency), lit(1.0))
+            .when(col("direct_rate").isNotNull(), lit(1.0) / col("direct_rate"))
+            .when(col("inverse_rate").isNotNull(), col("inverse_rate"))
+            .otherwise(lit(1.0)),
+        ).withColumn(
+            "market_value_base",
+            col("local_market_value") * col("fx_multiplier"),
+        )
+
+        return enriched
+
+    def get_sector_allocation(
+        self,
+        base_currency: str = "AUD",
+        as_of_date: Optional[str] = None,
+    ) -> DataFrame:
+        """
+        Sector weights by GICS sector with multi-currency conversion.
+
+        Returns DataFrame: gics_sector, market_value_base, weight_pct, num_holdings
+        """
+        enriched = self._holdings_with_base_value(base_currency, as_of_date)
+        if not enriched.head(1):
+            return self.spark.createDataFrame(
+                [],
+                "gics_sector STRING, market_value_base DOUBLE, weight_pct DOUBLE, "
+                "total_quantity DOUBLE, avg_fx_rate DOUBLE",
+            )
+
+        sector_agg = enriched.groupBy("gics_sector").agg(
+            sum("market_value_base").alias("market_value_base"),
+            sum("total_quantity").alias("total_quantity"),
+            avg("fx_multiplier").alias("avg_fx_rate"),
+            count("stock_symbol").alias("num_holdings"),
+        )
+
+        total = sector_agg.agg(sum("market_value_base").alias("total")).collect()[0]["total"] or 0
+
+        return sector_agg.withColumn(
+            "weight_pct",
+            when(lit(total) > 0, (col("market_value_base") / lit(total)) * 100).otherwise(lit(0.0)),
+        ).select(
+            "gics_sector",
+            "market_value_base",
+            "weight_pct",
+            "total_quantity",
+            "avg_fx_rate",
+        ).orderBy(col("weight_pct").desc())
+
+    def get_region_allocation(
+        self,
+        base_currency: str = "AUD",
+        as_of_date: Optional[str] = None,
+    ) -> DataFrame:
+        """
+        Regional weights by country_code with multi-currency conversion.
+
+        Returns DataFrame: country_code, market_code, market_value_base, weight_pct
+        """
+        enriched = self._holdings_with_base_value(base_currency, as_of_date)
+        if not enriched.head(1):
+            return self.spark.createDataFrame(
+                [],
+                "country_code STRING, market_code STRING, market_value_base DOUBLE, weight_pct DOUBLE",
+            )
+
+        region_agg = enriched.groupBy("country_code", "market_code").agg(
+            sum("market_value_base").alias("market_value_base"),
+        )
+
+        total = region_agg.agg(sum("market_value_base").alias("total")).collect()[0]["total"] or 0
+
+        return region_agg.withColumn(
+            "weight_pct",
+            when(lit(total) > 0, (col("market_value_base") / lit(total)) * 100).otherwise(lit(0.0)),
+        ).orderBy(col("weight_pct").desc())

@@ -5,6 +5,7 @@ services:
   minio:
     image: minio/minio:latest
     container_name: portfolio-minio
+    restart: unless-stopped
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -18,7 +19,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
       timeout: 20s
-      retries: 3
+      retries: 5
+      start_period: 20s
 
   # MinIO client to create buckets
   minio-setup:
@@ -60,12 +62,18 @@ services:
       - SPARK_HOME=/opt/spark
       - PYTHONPATH=/opt/spark/python:/opt/spark-apps
       - MINIO_ENDPOINT=http://minio:9000
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=portfolio
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
     volumes:
       - ./src:/opt/spark-apps/src
       - ./scripts:/opt/spark-apps/scripts
       - ./tests:/opt/spark-apps/tests
       - ./data:/opt/spark-apps/data
       - ./notebooks:/opt/spark-apps/notebooks
+      - ./config:/opt/spark-apps/config
       - ./.env:/opt/spark-apps/.env
       - spark-warehouse:/opt/spark-warehouse
     depends_on:

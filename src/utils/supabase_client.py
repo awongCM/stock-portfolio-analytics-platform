@@ -1,15 +1,21 @@
 """Supabase database connection and utilities."""
 
 import os
+from pathlib import Path
 from typing import Optional, Dict, Any
 from supabase import create_client, Client
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from dotenv import load_dotenv
 
-# Load .env.local first if it exists (for local development), then .env
-if os.path.exists('.env.local'):
-    load_dotenv('.env.local', override=True)
+# Load env from repo root so Spark jobs work regardless of cwd
+_repo_root = Path(__file__).resolve().parents[2]
+_env_local = _repo_root / ".env.local"
+_env = _repo_root / ".env"
+if _env_local.exists():
+    load_dotenv(_env_local, override=True)
+elif _env.exists():
+    load_dotenv(_env)
 else:
     load_dotenv()
 

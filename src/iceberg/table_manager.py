@@ -11,6 +11,8 @@ from .schemas import (
     TRANSACTIONS_SCHEMA,
     PORTFOLIO_METRICS_SCHEMA,
     TECHNICAL_INDICATORS_SCHEMA,
+    SECURITIES_SCHEMA,
+    EXCHANGE_RATES_SCHEMA,
 )
 
 
@@ -139,7 +141,53 @@ class IcebergTableManager:
             print(f"Created table: {table_name}")
         except Exception as e:
             print(f"Error creating {table_name}: {e}")
-    
+
+    def create_securities_table(self, namespace: str = "portfolio") -> None:
+        """Create securities dimension table partitioned by market."""
+        table_name = f"{namespace}.securities"
+
+        partition_spec = PartitionSpec(
+            PartitionField(
+                source_id=8,  # market_code field
+                field_id=1000,
+                transform=IdentityTransform(),
+                name="market_code",
+            )
+        )
+
+        try:
+            self.catalog.create_table(
+                identifier=table_name,
+                schema=SECURITIES_SCHEMA,
+                partition_spec=partition_spec,
+            )
+            print(f"Created table: {table_name}")
+        except Exception as e:
+            print(f"Error creating {table_name}: {e}")
+
+    def create_exchange_rates_table(self, namespace: str = "portfolio") -> None:
+        """Create exchange rates table partitioned by day."""
+        table_name = f"{namespace}.exchange_rates"
+
+        partition_spec = PartitionSpec(
+            PartitionField(
+                source_id=3,  # timestamp field
+                field_id=1000,
+                transform=DayTransform(),
+                name="day",
+            )
+        )
+
+        try:
+            self.catalog.create_table(
+                identifier=table_name,
+                schema=EXCHANGE_RATES_SCHEMA,
+                partition_spec=partition_spec,
+            )
+            print(f"Created table: {table_name}")
+        except Exception as e:
+            print(f"Error creating {table_name}: {e}")
+
     def create_all_tables(self, namespace: str = "portfolio") -> None:
         """Create all Iceberg tables."""
         # Ensure namespace exists
@@ -151,5 +199,7 @@ class IcebergTableManager:
         self.create_transactions_table(namespace)
         self.create_portfolio_metrics_table(namespace)
         self.create_technical_indicators_table(namespace)
+        self.create_securities_table(namespace)
+        self.create_exchange_rates_table(namespace)
         
         print(f"All tables created in namespace: {namespace}")

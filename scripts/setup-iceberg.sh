@@ -30,6 +30,22 @@ try:
 except Exception as e:
     print(f"Namespace creation: {e}")
 
+TABLES = [
+    "stock_prices",
+    "transactions",
+    "portfolio_metrics",
+    "technical_indicators",
+    "securities",
+    "exchange_rates",
+]
+
+for table in TABLES:
+    try:
+        spark.sql(f"DROP TABLE IF EXISTS {catalog_name}.portfolio.{table}")
+        print(f"✓ Dropped legacy table (if existed): {table}")
+    except Exception as e:
+        print(f"drop {table}: {e}")
+
 # Create stock_prices table
 try:
     spark.sql(f"""
@@ -118,6 +134,45 @@ try:
     print("✓ Created table: technical_indicators")
 except Exception as e:
     print(f"technical_indicators: {e}")
+
+# Create securities table
+try:
+    spark.sql(f"""
+        CREATE TABLE IF NOT EXISTS {catalog_name}.portfolio.securities (
+            stock_symbol STRING,
+            name STRING,
+            exchange STRING,
+            country_code STRING,
+            quote_currency STRING,
+            gics_sector STRING,
+            gics_sector_code STRING,
+            market_code STRING,
+            gics_sector_override STRING,
+            ingestion_timestamp TIMESTAMP
+        )
+        USING iceberg
+        PARTITIONED BY (market_code)
+    """)
+    print("✓ Created table: securities")
+except Exception as e:
+    print(f"securities: {e}")
+
+# Create exchange_rates table
+try:
+    spark.sql(f"""
+        CREATE TABLE IF NOT EXISTS {catalog_name}.portfolio.exchange_rates (
+            base_currency STRING,
+            quote_currency STRING,
+            timestamp TIMESTAMP,
+            rate DOUBLE,
+            ingestion_timestamp TIMESTAMP
+        )
+        USING iceberg
+        PARTITIONED BY (days(timestamp))
+    """)
+    print("✓ Created table: exchange_rates")
+except Exception as e:
+    print(f"exchange_rates: {e}")
 
 # Show tables
 print("\nCreated tables:")

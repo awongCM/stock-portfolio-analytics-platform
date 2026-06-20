@@ -67,3 +67,26 @@ TECHNICAL_INDICATORS_SCHEMA = Schema(
     NestedField(11, "bollinger_upper", DecimalType(20, 6), required=False),
     NestedField(12, "bollinger_lower", DecimalType(20, 6), required=False),
 )
+
+# Securities dimension (sector, region, currency metadata)
+SECURITIES_SCHEMA = Schema(
+    NestedField(1, "stock_symbol", StringType(), required=True),
+    NestedField(2, "name", StringType(), required=True),
+    NestedField(3, "exchange", StringType(), required=False),
+    NestedField(4, "country_code", StringType(), required=False),
+    NestedField(5, "quote_currency", StringType(), required=False),
+    NestedField(6, "gics_sector", StringType(), required=False),
+    NestedField(7, "gics_sector_code", StringType(), required=False),
+    NestedField(8, "market_code", StringType(), required=False),
+    NestedField(9, "gics_sector_override", StringType(), required=False),
+    NestedField(10, "ingestion_timestamp", TimestampType(), required=True),
+)
+
+# Daily FX rates for multi-currency conversion
+EXCHANGE_RATES_SCHEMA = Schema(
+    NestedField(1, "base_currency", StringType(), required=True),
+    NestedField(2, "quote_currency", StringType(), required=True),
+    NestedField(3, "timestamp", TimestampType(), required=True),
+    NestedField(4, "rate", DoubleType(), required=True),
+    NestedField(5, "ingestion_timestamp", TimestampType(), required=True),
+)
