@@ -94,6 +94,18 @@ poetry run pytest -m integration   # requires Docker services up
 
 **UIs:** Spark [http://localhost:8080](http://localhost:8080) · Jupyter [http://localhost:8888](http://localhost:8888) · MinIO [http://localhost:9001](http://localhost:9001)
 
+## Cursor Cloud specific instructions
+
+Cloud agents use `.cursor/environment.json` (Poetry dev shell + `docker compose` stack). Spark/Iceberg run inside `portfolio-spark`, not in the agent shell.
+
+1. Wait for the `stack` terminal; verify with `curl -f http://localhost:8888/api`.
+2. Unit tests: `poetry run pytest` (skip `-m integration` unless the stack is up).
+3. Spark/Iceberg: `docker exec portfolio-spark python scripts/test-analytics.py`
+4. ETL: `./scripts/run-etl-pipeline.sh` (requires postgres + spark).
+5. Prefer `scripts/*.sh` wrappers over raw docker commands.
+
+Set secrets in the Cursor Dashboard (not in repo): `POSTGRES_HOST=localhost`, `MINIO_ENDPOINT=http://localhost:9000`, plus credentials from `.env.example`.
+
 ## Agent behavior (learning mode)
 
 1. **Teach by default** — After changes, add a short **Lead takeaway** (concept, how this repo implements it, production pitfall).

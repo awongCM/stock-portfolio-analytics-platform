@@ -1,0 +1,24 @@
+{
+  "name": "Portfolio Analytics Platform",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "install": "poetry install --no-interaction && (test -f .env || cp .env.example .env)",
+  "start": "sudo service docker start",
+  "ports": [
+    { "name": "PostgreSQL", "port": 5432 },
+    { "name": "MinIO API", "port": 9000 },
+    { "name": "MinIO Console", "port": 9001 },
+    { "name": "Spark Master UI", "port": 8080 },
+    { "name": "Jupyter Lab", "port": 8888 },
+    { "name": "Spark App UI", "port": 4040 }
+  ],
+  "terminals": [
+    {
+      "name": "stack",
+      "command": "docker compose -f docker-compose.yaml up --build",
+      "description": "Postgres (TimescaleDB), MinIO buckets, and Spark/Jupyter from root Dockerfile"
+    }
+  ]
+}
